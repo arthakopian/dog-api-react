@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { Fragment, useEffect, useState } from "react";
 import { RANDOM_IMAGE_URL, DOG_BREEDS_URL } from './constants'
 import Carousel from "react-multi-carousel";
 import "react-multi-carousel/lib/styles.css";
 import List from '@mui/material/List';
-import { ListItem, ListSubheader } from "@mui/material";
+import { Collapse, IconButton, ListItem, ListSubheader } from "@mui/material";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 
@@ -15,8 +15,16 @@ const responsive = {
 }
 
 export default function App() {
+  let [open, setOpen] = useState(false)
   let imgUrls = useImages()
-  let breedList = useBreed()
+  let breedList = useBreed({})
+
+  const handleClick = (breed, expand) => {
+    setOpen({
+      ...open,
+      [breed]: expand,
+    })
+  }
 
   return (
     <div className="App">
@@ -38,16 +46,41 @@ export default function App() {
       </div>
       <List
         subheader={
-          <ListSubheader component="h1" >
+          <ListSubheader component="h1">
             Breed List
           </ListSubheader>
         }
       >
         {breedList.map(breedObj => (
-          <ListItem key={breedObj.breed}>
-            {breedObj.breed}
-            {!!breedObj.subBreeds.length && <>{true ? <ExpandLess /> : <ExpandMore />}</>}
-          </ListItem>
+          <Fragment key={breedObj.breed}>
+            <ListItem >
+              {breedObj.breed}
+              {!!breedObj.subBreeds.length &&
+                <>
+                  {open[breedObj.breed] ? (
+                    <IconButton onClick={() => handleClick(breedObj.breed, false)}>
+                      <ExpandLess />
+                    </IconButton>
+                  ) : (
+                    <IconButton onClick={() => handleClick(breedObj.breed, true)}>
+                      <ExpandMore />
+                    </IconButton>
+                  )}
+                </>
+              }
+            </ListItem>
+            {!!breedObj.subBreeds.length && (
+              <Collapse in={open[breedObj.breed]} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding>
+                  {breedObj.subBreeds.map((subBreed) => (
+                    <ListItem sx={{ pl: 4 }} key={subBreed}>
+                      {subBreed}
+                    </ListItem>
+                  ))}
+                </List>
+              </Collapse>
+            )}
+          </Fragment>
         ))}
       </List>
     </div>
