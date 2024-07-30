@@ -1,127 +1,57 @@
-import React, { Fragment, useEffect, useState } from "react";
-import { RANDOM_IMAGE_URL, DOG_BREEDS_URL } from './constants'
-import Carousel from "react-multi-carousel";
+import React from "react";
 import "react-multi-carousel/lib/styles.css";
-import List from '@mui/material/List';
-import { Collapse, IconButton, ListItem, ListSubheader } from "@mui/material";
-import ExpandLess from "@mui/icons-material/ExpandLess";
-import ExpandMore from "@mui/icons-material/ExpandMore";
-
-const responsive = {
-  desktop: {
-    breakpoint: { max: 3000, min: 0 },
-    items: 1
-  },
-}
+import Header from "./Header";
+import Image from "./Image";
+import Breed from "./Breed";
+import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
+import { BREEDS_ROUT, IMAGES_ROUT } from "./constants";
+import CrtBreed from "./CrtBreed";
 
 export default function App() {
-  let [open, setOpen] = useState(false)
-  let imgUrls = useImages()
-  let breedList = useBreed({})
+  const Layout = () => (
+    <div>
+      <Header />
+      <Outlet />
+    </div>
+  );
 
-  const handleClick = (breed, expand) => {
-    setOpen({
-      ...open,
-      [breed]: expand,
-    })
-  }
+  const Breeds = () => (
+    <div>
+      <Breed />
+      <Outlet />
+    </div>
+  )
+
+  const router = createBrowserRouter([
+    {
+      path: '/',
+      element: <Layout />, // Use Layout as the root element
+      children: [
+        {
+          path: IMAGES_ROUT,
+          element: <Image />,
+        },
+        {
+          path: BREEDS_ROUT,
+          element: <Breeds />,
+          children: [
+            {
+              path: ':crtBreed',
+              element: <CrtBreed />
+            },
+            {
+              path: ':crtBreed/:subCrtBreed',
+              element: <CrtBreed />
+            }
+          ]
+        },
+      ]
+    }
+  ]);
 
   return (
     <div className="App">
-      <h1>Random Images</h1>
-      <div style={{ position: 'relative' }}>
-        <Carousel
-          responsive={responsive}
-          arrows
-          autoPlaySpeed={3000}
-          renderDotsOutside
-          showDots
-        >
-          {imgUrls.length !== 0 && imgUrls.map(url => (
-            <div key={url} style={{ textAlign: "center" }}>
-              <img src={url} alt="" style={{ width: 400 }} />
-            </div>
-          ))}
-        </Carousel>
-      </div>
-      <List
-        subheader={
-          <ListSubheader component="h1">
-            Breed List
-          </ListSubheader>
-        }
-      >
-        {breedList.map(breedObj => (
-          <Fragment key={breedObj.breed}>
-            <ListItem >
-              {breedObj.breed}
-              {!!breedObj.subBreeds.length &&
-                <>
-                  {open[breedObj.breed] ? (
-                    <IconButton onClick={() => handleClick(breedObj.breed, false)}>
-                      <ExpandLess />
-                    </IconButton>
-                  ) : (
-                    <IconButton onClick={() => handleClick(breedObj.breed, true)}>
-                      <ExpandMore />
-                    </IconButton>
-                  )}
-                </>
-              }
-            </ListItem>
-            {!!breedObj.subBreeds.length && (
-              <Collapse in={open[breedObj.breed]} timeout="auto" unmountOnExit>
-                <List component="div" disablePadding>
-                  {breedObj.subBreeds.map((subBreed) => (
-                    <ListItem sx={{ pl: 4 }} key={subBreed}>
-                      {subBreed}
-                    </ListItem>
-                  ))}
-                </List>
-              </Collapse>
-            )}
-          </Fragment>
-        ))}
-      </List>
+      <RouterProvider router={router} />
     </div>
   );
-}
-
-function useImages() {
-  let [imgUrls, setImgUrls] = useState([])
-
-  useEffect(() => {
-    const getImageUrl = async () => {
-      for (let i = 0; i < 3; i++) {
-        let response = await fetch(RANDOM_IMAGE_URL)
-        let data = await response.json()
-        setImgUrls((old) => [...old, data.message])
-      }
-    }
-
-    getImageUrl()
-  }, [])
-
-  return imgUrls
-}
-
-function useBreed() {
-  let [breedList, setBreedList] = useState([])
-  useEffect(() => {
-    const getBreedList = async () => {
-      let response = await fetch(DOG_BREEDS_URL)
-      let data = await response.json()
-
-      const newData = Object.keys(data.message).map(breed => ({
-        breed,
-        subBreeds: data.message[breed]
-      }
-      ))
-      setBreedList(newData)
-    }
-
-    getBreedList()
-  }, [])
-
-  return breedList
 }
